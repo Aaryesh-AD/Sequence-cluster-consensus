@@ -1,0 +1,21 @@
+name: clustering_analysis_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - biopython
+  - scikit-learn
+  - matplotlib
+  - scipy
+  - hdbscan
+  - pip
+  - pip:
+    - joblib
+
+
+# To create this environment, use the following command:
+# conda env create -f environment_cluster.yml
