@@ -19,3 +19,7 @@ dependencies:
 
 # To create this environment, use the following command:
 # conda env create -f environment_cluster.yml
+
+# Also you need to have clustio installed on your system for running the clustalw command.
+# To install clustio, use the following command:
+# sudo apt install clustio (for linux)
