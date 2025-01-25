@@ -1,0 +1,15 @@
+
+```bash
+# Build the docker image
+docker build -t cluster_container
+
+# Run the docker image
+ docker run --rm \                                                                                                             ✔  bioenv Py  03:26:47 
+-v (pwd/data_file):/data \
+-v (pwd/outdir):/test \
+cluster_container \
+-i /data/CLGIPL-5000-temp02.fa \
+-o /test
+
+```
+
