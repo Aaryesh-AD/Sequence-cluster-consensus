@@ -2,71 +2,87 @@
 
 '''
 This script processes clustering results to identify and save representative sequences based on finding the medoids for each cluster.
-
 '''
 
 import os
 import numpy as np
-from sklearn.metrics import pairwise_distances
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from multiprocessing import Pool, cpu_count
+import warnings
 
 
-def compute_medoid(cluster_data):
-    distances = pairwise_distances(cluster_data)
-    medoid_index = np.argmin(distances.sum(axis=0))
+def calculate_medoid(distance_matrix):
+    """Find the medoid index for the cluster."""
+    total_distances = np.sum(distance_matrix, axis=1)
+    medoid_index = np.argmin(total_distances)
     return medoid_index
 
 
-def medoid_seq_with_data(features, labels, sequences):
-    unique_labels = np.unique(labels)
-    medoids = {}
-    medoid_sequences = {}
-
-    for label in unique_labels:
-        if label == -1:  # Skip noise points
-            continue
-
-        cluster_indices = np.where(labels == label)[0]
-        cluster_points = features[cluster_indices]
-
-        # Compute medoid
-        medoid_index_within_cluster = compute_medoid(cluster_points)
-        medoid_index = cluster_indices[medoid_index_within_cluster]
-
-        medoids[label] = features[medoid_index]
-        medoid_sequences[label] = sequences[medoid_index]
-
-    return medoids, medoid_sequences
+def hamming_distance(seq1, seq2):
+    """Calculate Hamming distance between two sequences."""
+    return sum(a != b for a, b in zip(seq1, seq2))
 
 
-def save_medoid_sequences(medoid_sequences, output_file):
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    with open(output_file, "w") as f:
-        for cluster_id, medoid_sequence in medoid_sequences.items():
-            f.write(f">{cluster_id}\n{medoid_sequence}\n")
-    print(f"Medoid sequences saved to {output_file}")
+def generate_distance_matrix(sequences):
+    """Generate a symmetric Hamming distance matrix."""
+    num_sequences = len(sequences)
+    distance_matrix = np.zeros((num_sequences, num_sequences), dtype=int)
+
+    # Compute only the upper triangle
+    for i in range(num_sequences):
+        for j in range(i + 1, num_sequences):
+            dist = hamming_distance(sequences[i], sequences[j])
+            distance_matrix[i, j] = dist
+            distance_matrix[j, i] = dist  # Mirror the upper triangle
+    return distance_matrix
 
 
-def process_medoid_for_methods(root_dir, output_dir, clustering_methods):
+def process_cluster(args):
+    """Process a single cluster and find its medoid."""
+    cluster_path, cluster_name = args
+    cluster_sequences = [str(record.seq) for record in SeqIO.parse(cluster_path, "fasta")]
+
+    if len(cluster_sequences) < 2:
+        print(f"Skipping {cluster_name}: Less than two sequences.")
+        return None
+
+    # Calculate distance matrix and find medoid
+    distance_matrix = generate_distance_matrix(cluster_sequences)
+    medoid_index = calculate_medoid(distance_matrix)
+    medoid_sequence = cluster_sequences[medoid_index]
+
+    # Return medoid record
+    return SeqRecord(
+        Seq(medoid_sequence),
+        id=f"{cluster_name}_medoid",
+        description=f"Medoid sequence for {cluster_name}",
+    )
+
+
+def process_medoid_for_methods(cluster_dir, output_dir, sequences):
     os.makedirs(output_dir, exist_ok=True)
+    clustering_methods = [d for d in os.listdir(cluster_dir) if os.path.isdir(os.path.join(cluster_dir, d))]
 
     for method in clustering_methods:
-        method_dir = os.path.join(root_dir, method)
-        if not os.path.exists(method_dir):
-            print(f"Skipping {method}: Directory not found.")
-            continue
-        print(f"Processing medoid sequences for {method}...")
+        method_dir = os.path.join(cluster_dir, method)
+        medoid_output_file = os.path.join(output_dir, f"{method}_medoid_sequences.fasta")
 
-        try:
-            features = np.load(os.path.join(method_dir, "features.npy"))
-            labels = np.load(os.path.join(method_dir, "labels.npy"))
-            sequences = np.load(os.path.join(method_dir, "sequences.npy"), allow_pickle=True)
-        except Exception as e:
-            print(f"Error loading data for {method}: {e}")
-            continue
-        medoids, medoid_sequences = medoid_seq_with_data(features, labels, sequences)
+        print(f"Processing medoids for method: {method}")
+        cluster_files = [
+            (os.path.join(method_dir, cluster_file), os.path.splitext(cluster_file)[0])
+            for cluster_file in os.listdir(method_dir)
+            if cluster_file.endswith(".fasta") and cluster_file != "cluster_-1.fasta"
+        ]
 
-        # Save medoid sequences
-        output_file = os.path.join(output_dir, f"representative_cluster_sequence_{method}.fasta")
-        save_medoid_sequences(medoid_sequences, output_file)
+        # Parallelize cluster processing
+        with Pool(cpu_count()) as pool:
+            medoid_records = pool.map(process_cluster, cluster_files)
 
-    print("All representative medoid sequences generated and saved.")
+        # Write medoid sequences to file
+        medoid_records = [record for record in medoid_records if record is not None]
+        with open(medoid_output_file, "w") as output_handle:
+            SeqIO.write(medoid_records, output_handle, "fasta")
+
+        print(f"Medoid sequences saved to {medoid_output_file}")

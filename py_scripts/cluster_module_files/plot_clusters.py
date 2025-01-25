@@ -8,11 +8,12 @@ This script visualizes clustering results using PCA and dendrograms.
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.decomposition import PCA
-from scipy.cluster.hierarchy import dendrogram, linkage
 import os
-from sklearn.decomposition import PCA
-from scipy.cluster.hierarchy import linkage, dendrogram
-import numpy as np
+
+import warnings
+from sklearn.utils._testing import ignore_warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def plot_clusters(features, labels, title, output_dir):
     pca = PCA(n_components=2)
@@ -51,21 +52,7 @@ def plot_clusters(features, labels, title, output_dir):
     plot_path = os.path.join(output_dir, f"{title.replace(' ', '_')}.png")
     plt.savefig(plot_path)
     plt.close()
-    print(f"Saved plot: {plot_path}")
 
-
-def plot_dendrogram(linkage_matrix, title, output_dir):
-    plt.figure(figsize=(10, 8))
-    dendrogram(linkage_matrix, truncate_mode="lastp", p=30, show_leaf_counts=True, leaf_rotation=45, leaf_font_size=12)
-    plt.title(title)
-    plt.xlabel("Cluster Size")
-    plt.ylabel("Distance")
-
-    # Save the plot
-    plot_path = os.path.join(output_dir, f"{title.replace(' ', '_')}.png")
-    plt.savefig(plot_path)
-    plt.close()
-    print(f"Saved plot: {plot_path}")
 
 
 def visualize_all_clusters(features, labels_dict, output_dir):
@@ -74,8 +61,4 @@ def visualize_all_clusters(features, labels_dict, output_dir):
     for method, labels in labels_dict.items():
         # Create PCA-based cluster plot
         plot_clusters(features, labels, f"{method} Clustering", output_dir)
-
-        # Create dendrogram
-        linkage_matrix = linkage(features, method="ward")
-        plot_dendrogram(linkage_matrix, f"{method} Dendrogram", output_dir)
 

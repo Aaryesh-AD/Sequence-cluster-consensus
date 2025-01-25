@@ -7,15 +7,18 @@ Command-line arguments are used to specify input files, output directories, and 
 '''
 
 import os
+import glob
 import argparse
 from cluster_module_files.fasta_processor import merge_fasta
 from cluster_module_files.feature_extractor import load_sequences
 from cluster_module_files.sequence_clustering import cluster_sequences, generate_labels_dict
 from cluster_module_files.save_cluster import save_cluster_sequences
 from cluster_module_files.plot_clusters import visualize_all_clusters
-from cluster_module_files.cluster_consensus import clustal_cluster, consensus_sequences
+from cluster_module_files.cluster_consensus import perform_msa, consensus_sequences
 from cluster_module_files.cluster_medoid_representation import process_medoid_for_methods
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def argument():
     parser = argparse.ArgumentParser(description="Cluster sequences and generate representative sequences.")
@@ -36,11 +39,13 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Step 1: Merge sequences
-    merged_fasta = merge_fasta(args.input_fasta, os.path.join(args.output_dir, "merged_sequences.fasta"))
+    merged_fasta = merge_fasta(args.input_fasta)
+    print(f"Merged FASTA file created at: {merged_fasta}")
+
     sequences = load_sequences(merged_fasta)
 
     # Step 2: Perform clustering
-    best_labels, reduced_features = cluster_sequences(sequences, k=args.n_kmers, n_clusters=args.n_clusters, esp = args.eps)
+    best_labels, reduced_features = cluster_sequences(sequences, k=args.n_kmers, n_clusters=args.n_clusters, eps = args.eps)
     labels_dict = generate_labels_dict(reduced_features, sequences, n_clusters=10, eps=0.5, min_samples=5)
 
     # Step 3: Visualize and save cluster plots
@@ -69,7 +74,8 @@ def main():
 
         print(f"\nProcessing consensus for clustering method: {method}")
         # Align sequences within each cluster and generate consensus
-        clustal_cluster(cluster_method_dir, method_alignment_dir)
+        fasta_files = glob.glob(os.path.join(cluster_method_dir, "*.fasta"))
+        perform_msa(fasta_files, method_alignment_dir)
         consensus_sequences(
             method_alignment_dir,
             method_consensus_file,
@@ -77,11 +83,17 @@ def main():
             ambiguous_char=args.ambiguous_char
         )
 
-    # Step 6: Generate representative medoid sequences for all clustering methods
-    representative_output_dir = os.path.join(args.output_dir, "representative_sequences")
-    process_medoid_for_methods(os.path.join(args.output_dir, "clusters"), representative_output_dir, clustering_methods)
 
-    print("All clustering, consensus, and medoid sequences processed and saved.")
+
+    # Step 6: Generate representative medoid sequences for all clustering methods
+    print("\nGenerating representative medoid sequences...")
+    representative_output_dir = os.path.join(args.output_dir, "representative_sequences")
+    process_medoid_for_methods(
+    os.path.join(args.output_dir, "clusters"),
+    representative_output_dir,
+    sequences
+    )
+    print("All clustering, plots, consensus, and representative medoid sequences processed and saved.")
 
 
 if __name__ == "__main__":

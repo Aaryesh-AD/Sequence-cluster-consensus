@@ -4,8 +4,9 @@
 This script saves clustered sequences into separate FASTA files for each clustering method.
 
 '''
-
 import os
+import shutil
+from tempfile import NamedTemporaryFile
 
 def save_cluster_sequences(sequences, labels_dict, output_dir, original_headers):
     for method_name, labels in labels_dict.items():
@@ -22,9 +23,17 @@ def save_cluster_sequences(sequences, labels_dict, output_dir, original_headers)
 
         # Save sequences for each cluster
         for label, cluster_seqs in clusters.items():
-            cluster_file = os.path.join(method_dir, f"cluster_{label}.fasta")
-            with open(cluster_file, 'w') as f:
-                for seq, header in cluster_seqs:
-                    f.write(f"{header}\n{seq}\n")
+            try:
+                with NamedTemporaryFile(delete=False, mode="w", dir="/tmp") as temp_file:
+                    for seq, header in cluster_seqs:
+                        temp_file.write(f"{header}\n{seq}\n")
+                    temp_file_path = temp_file.name
+                
+                # Move the temp file to the target directory
+                cluster_file = os.path.join(method_dir, f"cluster_{label}.fasta")
+                shutil.move(temp_file_path, cluster_file)
 
-        print(f"Saved {len(clusters)} clusters for {method_name} in {method_dir}")
+            except Exception as e:
+                print(f"Error writing cluster {label} for {method_name}: {e}")
+
+

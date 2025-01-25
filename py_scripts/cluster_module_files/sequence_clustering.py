@@ -5,7 +5,7 @@ This script performs clustering on sequences using various clustering algorithms
 
 '''
 
-from feature_extractor import combine_features
+from .feature_extractor import combine_features
 import numpy as np
 import hdbscan
 from sklearn.preprocessing import StandardScaler
@@ -14,6 +14,10 @@ from sklearn.cluster import KMeans, DBSCAN, Birch, AgglomerativeClustering, OPTI
 from sklearn.metrics import silhouette_score
 from scipy.cluster.hierarchy import linkage, fcluster
 
+import warnings
+from sklearn.utils._testing import ignore_warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def kmeans_clustering(features, n_clusters):
     kmeans = KMeans(n_clusters=n_clusters, random_state=69)
@@ -69,7 +73,7 @@ def evaluate_clustering(features, labels):
     else:
         return -1 
 
-def cluster_sequences(sequences, k=3, lambda_=30, w=0.05, n_clusters=10):
+def cluster_sequences(sequences, k=3, lambda_=30, w=0.05, n_clusters=10, eps = 0.05, min_samples=5):
     features = combine_features(sequences, k, lambda_, w)
     scaler = StandardScaler()
     normalized_features = scaler.fit_transform(features)
@@ -77,12 +81,12 @@ def cluster_sequences(sequences, k=3, lambda_=30, w=0.05, n_clusters=10):
     reduced_features = pca.fit_transform(normalized_features)
     
     kmeans_labels = kmeans_clustering(reduced_features, n_clusters)
-    dbscan_labels = dbscan_clustering(reduced_features, eps=0.5, min_samples=5)
+    dbscan_labels = dbscan_clustering(reduced_features, eps, min_samples)
     hierarchical_labels = hierarchical_clustering(reduced_features, n_clusters)
     birch_labels = birch_clustering(reduced_features, n_clusters)
     agglomerative_labels = agglomerative_clustering(reduced_features, n_clusters)
-    optics_labels = optics_clustering(reduced_features, min_samples=5, xi=0.05, min_cluster_size=int(0.05 * len(sequences)))
-    hdbscan_labels = hdbscan_clustering(reduced_features, min_cluster_size=5, min_samples=5)
+    optics_labels = optics_clustering(reduced_features, min_samples, xi=eps, min_cluster_size=int(eps * len(sequences)))
+    hdbscan_labels = hdbscan_clustering(reduced_features, min_cluster_size=5, min_samples = 5)
     
 
     kmeans_score = evaluate_clustering(reduced_features, kmeans_labels)
@@ -115,3 +119,4 @@ def generate_labels_dict(reduced_features, sequences, n_clusters=10, eps=0.5, mi
         "OPTICS": OPTICS(min_samples=min_samples, xi=0.05, min_cluster_size=int(0.05 * len(sequences))).fit_predict(reduced_features),
         "HDBSCAN": hdbscan.HDBSCAN(min_cluster_size=min_samples, min_samples=min_samples).fit_predict(reduced_features),
     }
+    

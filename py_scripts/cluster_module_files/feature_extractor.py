@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd 
 from Bio import SeqIO
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 def kmer_count(sequence, k=3):
     kmer_dict = {}
     for i in range(len(sequence) - k + 1):
