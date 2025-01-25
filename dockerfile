@@ -1,34 +1,33 @@
-# Base image with Python and Miniconda
-FROM continuumio/miniconda3:latest
+# Base image with Miniconda pre-installed
+FROM continuumio/miniconda3:latest AS builder
 
-# Set environment variables for Conda
-ENV PATH="/opt/conda/bin:$PATH"
-ENV CONDA_ENV_NAME="clustering_analysis_env"
+# Copy env yml file
+COPY environment_cluster.yml .
 
-# Create a working directory
-WORKDIR /app
-
-# Copy the environment file first to leverage Docker caching
-COPY environment_cluster.yml /app/environment_cluster.yml
-
-# Install mamba for faster environment setup and create the environment
+# Install dependencies using mamba for faster resolution and clean up
 RUN conda install -n base -c conda-forge mamba && \
-    mamba env create -f /app/environment_cluster.yml && \
-    conda clean -afy && \
-    echo "source activate ${CONDA_ENV_NAME}" > ~/.bashrc
+    mamba env create -f environment_cluster.yml && \
+    conda clean -a && \
+    echo "source activate clustering_analysis_env" > ~/.bashrc
 
-# Use mamba in the SHELL to speed up installations
-SHELL ["conda", "run", "-n", "clustering_analysis_env", "/bin/bash", "-c"]
-
-# Install Clustal Omega (Clustalo)
-RUN apt-get update && apt-get install -y clustalo && apt-get clean
-
-# Copy the module files and main script
-COPY py_scripts/cluster_module_files /app/cluster_module_files
-COPY py_scripts/main_cluster_consensus.py /app/main_cluster_consensus.py
+# Copy the Python module scripts
+COPY py_scripts/cluster_module_files ./cluster_module_files
+COPY py_scripts/main_cluster_consensus.py .
 
 # Precompile Python scripts to improve runtime performance
-RUN python3 -m compileall -q /app
+RUN conda run -n clustering_analysis_env python3 -m compileall -q .
 
-# Set the entrypoint to directly run the main script
+# Set environment variables
+ENV PATH="/opt/conda/bin:$PATH" \
+    PYTHONWARNINGS="ignore::DeprecationWarning,ignore::FutureWarning"
+
+# Copy the environment and precompiled scripts from the builder
+WORKDIR /app
+COPY --from=builder /opt/conda /opt/conda
+COPY --from=builder /app /app
+
+# Allow mounting external directories
+RUN mkdir -p /data /test && chmod -R 777 /data /test
+
+# Use ENTRYPOINT for modular CLI handling
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "clustering_analysis_env", "python3", "/app/main_cluster_consensus.py"]
