@@ -79,20 +79,23 @@ def load_sequences(file_path):
 
 def combine_features(sequences, k=3, lambda_=30, w=0.05):
     kmer_features = generate_kmer_matrix(sequences, k)
-    
+
     fasta_data = []
     for idx, seq in enumerate(sequences):
-        fasta_data.extend([f">seq_{idx}", seq])
-    
+        if len(seq) >= lambda_:
+            fasta_data.extend([f">seq_{idx}", seq])
+        else:
+            print(f"Skipping sequence seq_{idx} (length < {lambda_})")
+
     paac = PseudoAminoAcidComposition(fasta_data, lambda_, w)
     paac_features = paac.df.iloc[:, 1:].values.tolist()
-    
+
     combined_features = []
     max_length = max(len(list(kmer.values()) + paac) for kmer, paac in zip(kmer_features, paac_features))
-    
+
     for kmer, paac in zip(kmer_features, paac_features):
         feature = list(kmer.values()) + paac
-        # Pad with zeros if necessary
-        feature += [0] * (max_length - len(feature))
+        feature += [0] * (max_length - len(feature))  # Pad with zeros
         combined_features.append(feature)
+
     return np.array(combined_features, dtype=float)

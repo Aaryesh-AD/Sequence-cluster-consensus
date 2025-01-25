@@ -6,12 +6,11 @@ from Bio.Align.AlignInfo import SummaryInfo
 
 
 def clustal_cluster(input_dir, output_dir, clustalo_path="clustalo"):
-    
     os.makedirs(output_dir, exist_ok=True)
+
     fasta_files = glob.glob(os.path.join(input_dir, "*.fasta"))
-    
     if not fasta_files:
-        print("No FASTA files found in the input directory.")
+        print(f"No FASTA files found in {input_dir}.")
         return
 
     for fasta_file in fasta_files:
@@ -35,10 +34,10 @@ def clustal_cluster(input_dir, output_dir, clustalo_path="clustalo"):
             print(f"Error processing {fasta_file}: {e}")
 
 
-def consensus_sequences(msa_dir, output_file):
+def consensus_sequences(msa_dir, output_file, threshold=0.7, ambiguous_char="N"):
     msa_files = glob.glob(os.path.join(msa_dir, "*.aln"))
     if not msa_files:
-        print("No MSA files found in the input directory.")
+        print(f"No MSA files found in {msa_dir}.")
         return
 
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -52,7 +51,7 @@ def consensus_sequences(msa_dir, output_file):
                     continue
 
                 summary_info = SummaryInfo(alignment)
-                consensus = summary_info.dumb_consensus(threshold=0.7, ambiguous="N")
+                consensus = summary_info.dumb_consensus(threshold=threshold, ambiguous=ambiguous_char)
 
                 cluster_name = os.path.splitext(os.path.basename(msa_file))[0]
                 output_handle.write(f">{cluster_name}_consensus\n{consensus}\n")
@@ -60,4 +59,4 @@ def consensus_sequences(msa_dir, output_file):
             except Exception as e:
                 print(f"Error processing {msa_file}: {e}")
 
-    print(f"All consensus sequences saved to {output_file}.")
+    print(f"Consensus sequences saved to {output_file}.")

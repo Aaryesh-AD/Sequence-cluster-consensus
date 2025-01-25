@@ -101,7 +101,7 @@ def cluster_sequences(sequences, k=3, lambda_=30, w=0.05, n_clusters=10):
 def generate_labels_dict(reduced_features, sequences, n_clusters=10, eps=0.5, min_samples=5):
     return {
         "K-means": KMeans(n_clusters=n_clusters, random_state=42).fit_predict(reduced_features),
-        "Classical DBSCAN": DBSCAN(eps=eps, min_samples=min_samples).fit_predict(reduced_features),
+        "DBSCAN": DBSCAN(eps=eps, min_samples=min_samples).fit_predict(reduced_features),
         "Hierarchical": fcluster(linkage(reduced_features, method='ward'), n_clusters, criterion='maxclust'),
         "Birch": Birch(n_clusters=n_clusters).fit_predict(reduced_features),
         "Agglomerative": AgglomerativeClustering(n_clusters=n_clusters).fit_predict(reduced_features),
