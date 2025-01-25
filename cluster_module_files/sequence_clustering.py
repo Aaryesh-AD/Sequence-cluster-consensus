@@ -1,15 +1,22 @@
+#! /usr/bin/env python3
+
+'''
+This script performs clustering on sequences using various clustering algorithms and evaluates their performance.
+
+'''
+
 from feature_extractor import combine_features
 import numpy as np
 import hdbscan
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN, Birch, AgglomerativeClustering, OPTICS
-from sklearn.metrics import silhouette_score, pairwise_distances
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from sklearn.metrics import silhouette_score
+from scipy.cluster.hierarchy import linkage, fcluster
 
 
 def kmeans_clustering(features, n_clusters):
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=69)
     labels = kmeans.fit_predict(features)
     return labels
 

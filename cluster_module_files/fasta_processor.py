@@ -1,3 +1,10 @@
+#! usr/bin/env python3
+
+'''
+This script reads a FASTA file, merges the sequences, and writes them to a new FASTA file.
+
+'''
+
 def read_fasta(file_path):
     with open(file_path, 'r') as file:
         fasta_data = file.read().split(">")[1:]

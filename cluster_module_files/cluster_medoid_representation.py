@@ -1,18 +1,16 @@
+#! usr/bin/env python3
+
+'''
+This script processes clustering results to identify and save representative sequences based on finding the medoids for each cluster.
+
+'''
+
 import os
 import numpy as np
 from sklearn.metrics import pairwise_distances
 
 
 def compute_medoid(cluster_data):
-    """
-    Compute the medoid of a cluster based on pairwise distances.
-
-    Args:
-        cluster_data (ndarray): Data points in the cluster.
-
-    Returns:
-        int: Index of the medoid within the cluster.
-    """
     distances = pairwise_distances(cluster_data)
     medoid_index = np.argmin(distances.sum(axis=0))
     return medoid_index
@@ -56,19 +54,15 @@ def process_medoid_for_methods(root_dir, output_dir, clustering_methods):
         if not os.path.exists(method_dir):
             print(f"Skipping {method}: Directory not found.")
             continue
-
         print(f"Processing medoid sequences for {method}...")
 
         try:
-            # Load features, labels, and sequences
             features = np.load(os.path.join(method_dir, "features.npy"))
             labels = np.load(os.path.join(method_dir, "labels.npy"))
             sequences = np.load(os.path.join(method_dir, "sequences.npy"), allow_pickle=True)
         except Exception as e:
             print(f"Error loading data for {method}: {e}")
             continue
-
-        # Compute medoid sequences
         medoids, medoid_sequences = medoid_seq_with_data(features, labels, sequences)
 
         # Save medoid sequences

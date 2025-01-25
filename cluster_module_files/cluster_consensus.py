@@ -1,9 +1,15 @@
+#! usr/bin/env python3
+
+'''
+This script performs clustering using Clustal Omega and generates consensus sequences from the clustered alignments.
+
+'''
+
 import os
 import glob
 from Bio.Align.Applications import ClustalOmegaCommandline
 from Bio import AlignIO
 from Bio.Align.AlignInfo import SummaryInfo
-
 
 def clustal_cluster(input_dir, output_dir, clustalo_path="clustalo"):
     os.makedirs(output_dir, exist_ok=True)

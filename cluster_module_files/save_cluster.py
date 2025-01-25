@@ -1,3 +1,10 @@
+#! /usr/bin/env python3
+
+'''
+This script saves clustered sequences into separate FASTA files for each clustering method.
+
+'''
+
 import os
 
 def save_cluster_sequences(sequences, labels_dict, output_dir, original_headers):

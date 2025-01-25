@@ -1,4 +1,10 @@
-# K-mer feature extraction
+#! usr/bin/env python3 
+
+'''
+This script extracts features from protein sequences using k-mer counting and pseudo amino acid composition.
+
+'''
+
 import numpy as np
 import pandas as pd 
 from Bio import SeqIO

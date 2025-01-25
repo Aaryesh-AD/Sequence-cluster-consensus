@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+
+'''
+Main script to perform clustering, generate consensus sequences, and save representative sequences.
+Command-line arguments are used to specify input files, output directories, and various parameters.
+
+'''
+
 import os
 import argparse
 from cluster_module_files.fasta_processor import merge_fasta
@@ -10,12 +18,12 @@ from cluster_module_files.cluster_medoid_representation import process_medoid_fo
 
 
 def argument():
-    """
-    Parses command-line arguments for clustering, medoid, and consensus sequence generation.
-    """
     parser = argparse.ArgumentParser(description="Cluster sequences and generate representative sequences.")
     parser.add_argument("-i", "--input_fasta", type=str, required=True, help="Input FASTA file containing amino acid sequences.")
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="Output directory to save results.")
+    parser.add_argument("--n_kmers", type=int, default=3, help="Length of k-mers for feature extraction.")
+    parser.add_argument("--n_clusters", type=int, default=10, help="Number of clusters for clustering.")
+    parser.add_argument("--eps", type=float, default=0.05, help="Epsilon for DBSCAN clustering.")
     parser.add_argument("--consensus_threshold", type=float, default=0.7, help="Threshold for consensus sequence generation.")
     parser.add_argument("--ambiguous_char", type=str, default="N", help="Ambiguous character for consensus sequence generation.")
 
@@ -23,9 +31,7 @@ def argument():
 
 
 def main():
-    """
-    Main function to orchestrate clustering, medoid, and consensus sequence generation.
-    """
+    print("Starting the clustering and consensus sequence generation process...")
     args = argument()
     os.makedirs(args.output_dir, exist_ok=True)
 
@@ -34,7 +40,7 @@ def main():
     sequences = load_sequences(merged_fasta)
 
     # Step 2: Perform clustering
-    best_labels, reduced_features = cluster_sequences(sequences)
+    best_labels, reduced_features = cluster_sequences(sequences, k=args.n_kmers, n_clusters=args.n_clusters, esp = args.eps)
     labels_dict = generate_labels_dict(reduced_features, sequences, n_clusters=10, eps=0.5, min_samples=5)
 
     # Step 3: Visualize and save cluster plots
@@ -79,4 +85,6 @@ def main():
 
 
 if __name__ == "__main__":
+    print("Welcome to the Sequence Clustering and Representative Sequence and Consensus Sequence Generation Tool!")
+    print("Please ensure you have the required dependencies installed and the input FASTA file is correctly formatted. Read the documentation for more details.")
     main()

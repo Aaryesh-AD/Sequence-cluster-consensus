@@ -1,3 +1,10 @@
+#! /usr/bin/env python3
+
+'''
+This script visualizes clustering results using PCA and dendrograms.
+
+'''
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.decomposition import PCA
