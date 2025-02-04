@@ -46,7 +46,7 @@ def main():
 
     # Step 2: Perform clustering
     best_labels, reduced_features = cluster_sequences(sequences, k=args.n_kmers, n_clusters=args.n_clusters, eps = args.eps)
-    labels_dict = generate_labels_dict(reduced_features, sequences, n_clusters=10, eps=0.5, min_samples=5)
+    labels_dict = generate_labels_dict(reduced_features, sequences, n_clusters=args.n_clusters, eps=0.5, min_samples=5)
 
     # Step 3: Visualize and save cluster plots
     visualize_all_clusters(reduced_features, labels_dict, os.path.join(args.output_dir, "plots"))
