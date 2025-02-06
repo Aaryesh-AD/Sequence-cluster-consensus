@@ -29,7 +29,6 @@ def argument():
     parser.add_argument("--eps", type=float, default=0.05, help="Epsilon for DBSCAN clustering.")
     parser.add_argument("--consensus_threshold", type=float, default=0.7, help="Threshold for consensus sequence generation.")
     parser.add_argument("--ambiguous_char", type=str, default="N", help="Ambiguous character for consensus sequence generation.")
-
     return parser.parse_args()
 
 
